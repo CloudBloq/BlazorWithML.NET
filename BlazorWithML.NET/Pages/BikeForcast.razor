@@ -1,0 +1,83 @@
+﻿@page "/BikeDemandForcast"
+
+@using BlazorWithML.NET.Model
+@using Newtonsoft.Json
+
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+
+<h3>Bike Demand Forcast</h3>
+
+<div class="row">
+    <EditForm Model="@accountModel" OnValidSubmit="@GetBikeDemandForcast">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="form-group">
+            Number of years to predict: <InputNumber id="numberOfYearsToPredict" @bind-Value="accountModel.numberOfYearsToPredict" class="form-control" />
+        </div>
+
+        <br />
+
+        <button type="submit" class="btn btn-success">Submit</button>
+    </EditForm>
+</div>
+
+<br />
+<br />
+
+<div class="row">
+    @if (forecastOutputs.Count == 0)
+    {
+        <p><em>No forcast yet...</em></p>
+    }
+    else
+    {
+        <div>
+            <span style="font-weight:bold">Mean Absolute Error:</span> @evaluateOutput.MeanAbsoluteError
+
+            <br />
+
+            <span style="font-weight:bold">Root Mean Squared Error:</span> @evaluateOutput.RootMeanSquaredError
+
+            <br />
+            <br />
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Actual Rentals</th>
+                        <th>Lower Estimate</th>
+                        <th>Forecast</th>
+                        <th>Upper Estimate</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var forcast in forecastOutputs)
+                    {
+                        <tr>
+                            <td>@forcast.Date</td>
+                            <td>@forcast.ActualRentals</td>
+                            <td>@forcast.LowerEstimate</td>
+                            <td>@forcast.Forecast</td>
+                            <td>@forcast.UpperEstimate</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+
+@code {
+    List<ForecastOutput> forecastOutputs = new List<ForecastOutput>();
+    EvaluateOutput evaluateOutput = new EvaluateOutput();
+    BikeForcastInput accountModel = new BikeForcastInput();
+
+    private async Task GetBikeDemandForcast()
+    {
+        forecastOutputs = await Http.GetFromJsonAsync<List<ForecastOutput>>($"BikeDemandForcast/GetForecastOutput/{accountModel.numberOfYearsToPredict}");
+        evaluateOutput = await Http.GetFromJsonAsync<EvaluateOutput>($"BikeDemandForcast/GetEvaluateOutput/{accountModel.numberOfYearsToPredict}");
+    }
+}
