@@ -14,7 +14,7 @@
         <ValidationSummary />
 
         <div class="form-group">
-            Number of years to predict: <InputNumber id="numberOfYearsToPredict" @bind-Value="accountModel.numberOfYearsToPredict" class="form-control" />
+            Number of years to predict: <InputNumber id="numberOfYearsToPredict" @bind-Value="accountModel.numberOfDaysToPredict" class="form-control" />
         </div>
 
         <br />
@@ -77,7 +77,7 @@
 
     private async Task GetBikeDemandForcast()
     {
-        forecastOutputs = await Http.GetFromJsonAsync<List<ForecastOutput>>($"BikeDemandForcast/GetForecastOutput/{accountModel.numberOfYearsToPredict}");
-        evaluateOutput = await Http.GetFromJsonAsync<EvaluateOutput>($"BikeDemandForcast/GetEvaluateOutput/{accountModel.numberOfYearsToPredict}");
+        forecastOutputs = await Http.GetFromJsonAsync<List<ForecastOutput>>($"BikeDemandForcast/GetForecastOutput/{accountModel.numberOfDaysToPredict}");
+        evaluateOutput = await Http.GetFromJsonAsync<EvaluateOutput>($"BikeDemandForcast/GetEvaluateOutput/{accountModel.numberOfDaysToPredict}");
     }
 }

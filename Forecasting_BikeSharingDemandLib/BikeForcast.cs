@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.IO;
 using System.Linq;
-using System.Text;
 
 namespace Forecasting_BikeSharingDemandLib
 {
@@ -22,41 +21,52 @@ namespace Forecasting_BikeSharingDemandLib
             return (connectionString, modelPath);
         }
 
-        public static (EvaluateOutput evaluateOutput, List<ForecastOutput> forecastOutput) GetBikeForcast(int numberOfYearsToPredict)
+        public static (EvaluateOutput evaluateOutput, List<ForecastOutput> forecastOutput) GetBikeForcast(int numberOfDaysToPredict)
         {
             MLContext mlContext = new MLContext();
 
+            //Create DatabaseLoader that loads records of type ModelInput.           
             DatabaseLoader loader = mlContext.Data.CreateDatabaseLoader<ModelInput>();
 
+            //Define the query to load the data from the database.
             string query = "SELECT RentalDate, CAST(Year as REAL) as Year, CAST(TotalRentals as REAL) as TotalRentals FROM Rentals";
 
+            //Connect to the database and execute the query.
             DatabaseSource dbSource = new DatabaseSource(SqlClientFactory.Instance,
                                             GetConnectionString().connectionString,
                                             query);
+
+            //Load the data into an IDataView.
             IDataView dataView = loader.Load(dbSource);
 
+            //Filter the data
             IDataView firstYearData = mlContext.Data.FilterRowsByColumn(dataView, "Year", upperBound: 1);
             IDataView secondYearData = mlContext.Data.FilterRowsByColumn(dataView, "Year", lowerBound: 1);
 
+            //Define time series analysis pipeline
             var forecastingPipeline = mlContext.Forecasting.ForecastBySsa(
                 outputColumnName: "ForecastedRentals",
                 inputColumnName: "TotalRentals",
                 windowSize: 7,
                 seriesLength: 30,
                 trainSize: 365,
-                horizon: numberOfYearsToPredict,
+                horizon: numberOfDaysToPredict,
                 confidenceLevel: 0.95f,
                 confidenceLowerBoundColumn: "LowerBoundRentals",
                 confidenceUpperBoundColumn: "UpperBoundRentals");
 
+            //Use the Fit method to train the model and fit the data to the previously defined forecastingPipeline.
             SsaForecastingTransformer forecaster = forecastingPipeline.Fit(firstYearData);
 
+            //Evaluate the model
             EvaluateOutput evaluateOutput = Evaluate(secondYearData, forecaster, mlContext);
 
+            //Save the model
             var forecastEngine = forecaster.CreateTimeSeriesEngine<ModelInput, ModelOutput>(mlContext);
             forecastEngine.CheckPoint(mlContext, GetConnectionString().modelPath);
 
-            List<ForecastOutput> forecastOutput = Forecast(secondYearData, numberOfYearsToPredict, forecastEngine, mlContext);
+            //Use the model to forecast demand
+            List<ForecastOutput> forecastOutput = Forecast(secondYearData, numberOfDaysToPredict, forecastEngine, mlContext);
 
             return (evaluateOutput, forecastOutput);
         }
@@ -96,6 +106,8 @@ namespace Forecasting_BikeSharingDemandLib
         private static List<ForecastOutput> Forecast(IDataView testData, int horizon, TimeSeriesPredictionEngine<ModelInput, ModelOutput> forecaster, MLContext mlContext)
         {
             List<ForecastOutput> forecastOutputList = new List<ForecastOutput>();
+
+            //use the Predict method to forecast rentals.
             ModelOutput forecast = forecaster.Predict();
 
             IEnumerable<ForecastOutput> forecastOutput =
@@ -116,17 +128,9 @@ namespace Forecasting_BikeSharingDemandLib
                             Forecast = estimate,
                             UpperEstimate = upperEstimate
                         };
-
-                        //return $"Date: {rentalDate}\n" +
-                        //$"Actual Rentals: {actualRentals}\n" +
-                        //$"Lower Estimate: {lowerEstimate}\n" +
-                        //$"Forecast: {estimate}\n" +
-                        //$"Upper Estimate: {upperEstimate}\n";
                     });
 
-            // Output predictions
-            Console.WriteLine("Rental Forecast");
-            Console.WriteLine("---------------------");
+            // Output predictions          
             foreach (var prediction in forecastOutput)
             {
                 forecastOutputList.Add(prediction);

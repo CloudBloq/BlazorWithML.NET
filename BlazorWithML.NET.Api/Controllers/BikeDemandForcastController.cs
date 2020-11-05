@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Forecasting_BikeSharingDemandLib;
-using Microsoft.AspNetCore.Http;
+﻿using Forecasting_BikeSharingDemandLib;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BlazorWithML.NET.Api.Controllers
@@ -13,19 +8,19 @@ namespace BlazorWithML.NET.Api.Controllers
     public class BikeDemandForcastController : ControllerBase
     {
 
-        [HttpGet("GetEvaluateOutput/{numberOfYearsToPredict}")]
-        public IActionResult GetEvaluateOutput(int numberOfYearsToPredict)
+        [HttpGet("GetEvaluateOutput/{numberOfDaysToPredict}")]
+        public IActionResult GetEvaluateOutput(int numberOfDaysToPredict)
         {
-            var output = BikeForcast.GetBikeForcast(numberOfYearsToPredict);
+            var output = BikeForcast.GetBikeForcast(numberOfDaysToPredict);
 
             return Ok(output.evaluateOutput);
         }
 
-        
-        [HttpGet("GetForecastOutput/{numberOfYearsToPredict}")]
-        public IActionResult GetForecastOutput(int numberOfYearsToPredict)
+
+        [HttpGet("GetForecastOutput/{numberOfDaysToPredict}")]
+        public IActionResult GetForecastOutput(int numberOfDaysToPredict)
         {
-            var output = BikeForcast.GetBikeForcast(numberOfYearsToPredict);
+            var output = BikeForcast.GetBikeForcast(numberOfDaysToPredict);
 
             return Ok(output.forecastOutput);
         }

@@ -10,6 +10,6 @@ namespace BlazorWithML.NET.Model
     {
         [Required(ErrorMessage = "Number of years to predict is required.")]
         [Range(minimum: 1, maximum: 500, ErrorMessage = "Range of values allowed are 1 - 500")]
-        public int numberOfYearsToPredict { get; set; }
+        public int numberOfDaysToPredict { get; set; }
     }
 }
